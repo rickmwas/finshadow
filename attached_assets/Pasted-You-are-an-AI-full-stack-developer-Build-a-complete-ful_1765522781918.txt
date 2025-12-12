@@ -1,0 +1,126 @@
+You are an AI full-stack developer. Build a **complete full-stack Fin-Shadow platform** with **backend, frontend, and AI/ML predictive modules**. Deliver all files, folders, and code needed for a **fully runnable system** locally. Stack: **FastAPI + SQLite/PostgreSQL + Pydantic + React + TailwindCSS**. Include AI/ML for predictive fraud scoring, threat actor profiling, and dashboard visualizations.  
+
+---
+
+# PROJECT STRUCTURE
+
+FinShadow/
+  backend/
+    src/
+      app.py                 # FastAPI root
+      config.py              # Global settings
+      database.py            # SQLite/PostgreSQL ORM setup
+      models/
+        pydantic_models.py   # Pydantic models
+        db_models.py         # SQLAlchemy models
+      routes/
+        intel.py             # Threat actor endpoints
+        fraud.py             # Fraud scanning endpoints
+        predict.py           # Prediction endpoints
+      services/
+        parser.py            # Fraud signal extraction from HTML
+        fraud_service.py     # Fraud logic
+        intel_service.py     # Threat actor intelligence
+        predict_service.py   # ML-based predictive scoring
+        ml_model.py          # ML/AI model training & inference
+      utils/
+        data_loader.py       # Sample datasets for training/testing
+        metrics.py           # Scoring & evaluation
+    .db/finshadow.db         # SQLite DB or placeholder for PostgreSQL
+
+  frontend/
+    src/
+      App.jsx
+      index.jsx
+      pages/
+        Dashboard.jsx        # Overview + charts
+        FraudFindings.jsx    # Table + details
+        ThreatActors.jsx     # Actor profiles
+        DarkWebIntel.jsx     # Mock feed + alerts
+        Predictions.jsx      # Risk score dashboard + AI insights
+      components/
+        Navbar.jsx
+        Footer.jsx
+        Card.jsx
+        Table.jsx
+        Chart.jsx
+      services/
+        api.js               # Axios calls to backend
+      styles/
+        tailwind.css
+    public/
+      index.html
+      favicon.ico
+
+  README.md
+  package.json
+  requirements.txt
+
+---
+
+# FUNCTIONAL REQUIREMENTS
+
+## Backend
+- Health check: `GET /health`
+- Threat Actors:
+  - `GET /intel/threat-actors` — list of actors
+  - `GET /intel/threat-actors/analyze` — actor intelligence summary
+  - `POST /intel/threat-actors/import` — add actor
+- Fraud Scanning:
+  - `GET /fraud/scan/sim?persist=bool` — scan HTML pages
+  - `POST /fraud/ingest` — ingest single HTML
+  - `GET /fraud/findings?limit=100`
+- Prediction:
+  - `GET /predict/attack?region=XX` — ML/AI model returns:
+    `{ risk_score, likely_attack_type, likely_target, severity_level, recommended_defenses }`
+
+### AI/ML
+- Train fraud prediction model using historical findings + simulated data
+- Train threat actor profiling model using mock actor dataset
+- Endpoint `/predict/attack` calls ML model for real-time scoring
+- Persist trained models in `ml_model.py` and `models/` folder
+- Include evaluation metrics (accuracy, precision, recall)
+
+## Frontend
+- React + TailwindCSS
+- Fetch data via Axios
+- Pages:
+  - Dashboard: summary cards + charts
+  - Fraud Findings: searchable table + severity filter
+  - Threat Actors: profile cards + trends
+  - Dark Web Intel: mock intel feed
+  - Predictions: risk scores + AI insights visualized
+- Dark fintech theme, responsive design
+- Charts: Chart.js or Recharts
+
+---
+
+# NON-FUNCTIONAL
+- Response <150ms for scans, <300ms for predictions locally
+- Modular code: services handle logic, routes just API + validation
+- CORS enabled, secure logging
+- Ready for PostgreSQL + Redis + cloud ML pipelines
+- Type hints and Pydantic validation everywhere
+
+---
+
+# DOCUMENTATION
+- README.md with setup instructions for backend and frontend
+- Example curl/Postman requests
+- Instructions to run backend: `uvicorn backend.src.app:app --reload`
+- Instructions to run frontend: `npm install && npm run dev`
+
+---
+
+# DELIVERY
+- Generate all files in correct folders
+- Backend fully runnable
+- Frontend fully runnable
+- ML models integrated with prediction endpoint
+- Example datasets included
+- Optional unit tests for backend + frontend
+- Clear folder structure, commented code
+
+---
+
+Build the **entire full-stack Fin-Shadow system** ready for local deployment, with AI/ML predictive scoring, threat actor analysis, fraud detection, and responsive fintech-style frontend dashboard.
