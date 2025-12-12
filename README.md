@@ -101,11 +101,3 @@ Make sure you have your Postgres connection configured (typically via environmen
 This project is licensed under the MIT License.
 
 ---
-
-If you'd like, I can:
-
-- Add an example `.env.example` with suggested variables
-- Add a `start:dev` script to run client+server concurrently
-- Update README with screenshots or a development diagram
-
-Tell me which you'd like next.
