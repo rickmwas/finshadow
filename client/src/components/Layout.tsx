@@ -9,7 +9,6 @@ import {
   Bell, 
   Search,
   Menu,
-  Shield,
   FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,9 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-8">
             <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight hover:opacity-80 transition-opacity">
-              <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center border border-primary/20">
-                <Shield className="h-5 w-5 text-primary" />
-              </div>
+              <img src="/logo.png" alt="FinShadow" className="h-8 w-8 rounded bg-primary/10 object-contain border border-primary/20" />
               <span className="hidden md:inline-block">Fin<span className="text-primary">Shadow</span></span>
             </Link>
 
@@ -88,7 +85,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <SheetContent side="left" className="w-64 bg-background border-r border-border">
                 <div className="flex flex-col gap-6 mt-6">
                   <div className="flex items-center gap-2 font-bold text-xl">
-                    <Shield className="h-6 w-6 text-primary" />
+                    <img src="/logo.png" alt="FinShadow" className="h-6 w-6 object-contain" />
                     <span>FinShadow</span>
                   </div>
                   <nav className="flex flex-col gap-2">
