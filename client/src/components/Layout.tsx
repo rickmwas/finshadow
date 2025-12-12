@@ -9,7 +9,8 @@ import {
   Bell, 
   Search,
   Menu,
-  Shield
+  Shield,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { label: "Threat Actors", icon: Users, href: "/threat-actors" },
     { label: "Dark Web Intel", icon: Globe, href: "/dark-web-intel" },
     { label: "AI Predictions", icon: BrainCircuit, href: "/predictions" },
+    { label: "System Guide", icon: FileText, href: "/docs" },
   ];
 
   return (

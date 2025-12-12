@@ -9,6 +9,7 @@ import FraudFindings from "@/pages/FraudFindings";
 import ThreatActors from "@/pages/ThreatActors";
 import DarkWebIntel from "@/pages/DarkWebIntel";
 import Predictions from "@/pages/Predictions";
+import Documentation from "@/pages/Documentation";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/threat-actors" component={ThreatActors}/>
       <Route path="/dark-web-intel" component={DarkWebIntel}/>
       <Route path="/predictions" component={Predictions}/>
+      <Route path="/docs" component={Documentation}/>
       <Route component={NotFound} />
     </Switch>
   );
