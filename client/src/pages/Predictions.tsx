@@ -1,9 +1,12 @@
+import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { predictions } from "@/lib/mockData";
-import { BrainCircuit, Sparkles, MapPin, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { predictions as initialPredictions } from "@/lib/mockData";
+import { BrainCircuit, Sparkles, MapPin, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
     Radar,
     RadarChart,
@@ -24,6 +27,24 @@ const radarData = [
 ];
 
 export default function Predictions() {
+  const [predictions, setPredictions] = useState(initialPredictions);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  const runSimulation = () => {
+    setIsSimulating(true);
+    toast.info("Running Monte Carlo simulations...");
+
+    setTimeout(() => {
+        setIsSimulating(false);
+        setPredictions(prev => prev.map(p => ({
+            ...p,
+            riskScore: Math.min(100, Math.max(10, p.riskScore + (Math.random() > 0.5 ? 5 : -5))),
+            aiConfidence: Math.min(100, p.aiConfidence + 1)
+        })));
+        toast.success("Risk models updated", { description: "New threat vectors analyzed." });
+    }, 2000);
+  };
+
   return (
     <Layout>
       <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -32,9 +53,21 @@ export default function Predictions() {
             <h1 className="text-3xl font-bold tracking-tight">AI Predictions</h1>
             <p className="text-muted-foreground mt-1">Machine Learning models forecasting potential attack vectors.</p>
           </div>
-          <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/50 gap-2 px-3 py-1">
-            <Sparkles className="h-3 w-3" /> Model v2.4 Active
-          </Badge>
+          <div className="flex gap-2">
+            <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={runSimulation}
+                disabled={isSimulating}
+                className="gap-2"
+            >
+                {isSimulating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Run Simulation
+            </Button>
+            <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/50 gap-2 px-3 py-1">
+                <Sparkles className="h-3 w-3" /> Model v2.4 Active
+            </Badge>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">

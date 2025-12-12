@@ -1,8 +1,9 @@
+import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { stats, fraudFindings, predictions } from "@/lib/mockData";
+import { stats as initialStats, fraudFindings, predictions } from "@/lib/mockData";
 import { 
   ShieldAlert, 
   Activity, 
@@ -10,8 +11,10 @@ import {
   ArrowUpRight, 
   TrendingUp,
   AlertTriangle,
+  Loader2,
   CheckCircle2
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Area,
   AreaChart,
@@ -43,6 +46,30 @@ const riskDistribution = [
 ];
 
 export default function Dashboard() {
+  const [isScanning, setIsScanning] = useState(false);
+  const [stats, setStats] = useState(initialStats);
+
+  const handleLiveScan = () => {
+    setIsScanning(true);
+    toast.info("Initiating deep system scan...");
+    
+    setTimeout(() => {
+      setIsScanning(false);
+      setStats(prev => ({
+        ...prev,
+        activeThreats: prev.activeThreats + 1,
+        fraudAttemptsBlocked: prev.fraudAttemptsBlocked + 5
+      }));
+      toast.error("Threat Detected!", {
+        description: "1 critical anomaly found in transaction stream.",
+        action: {
+          label: "View",
+          onClick: () => window.location.href = '/fraud-findings'
+        }
+      });
+    }, 2500);
+  };
+
   return (
     <Layout>
       <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -52,9 +79,24 @@ export default function Dashboard() {
             <p className="text-muted-foreground mt-1">Real-time threat monitoring and system health.</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">Download Report</Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-              <Activity className="h-4 w-4" /> Live Scan
+            <Button variant="outline" size="sm" onClick={() => toast.success("Report generated", { description: "PDF download started." })}>
+              Download Report
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 min-w-[120px]"
+              onClick={handleLiveScan}
+              disabled={isScanning}
+            >
+              {isScanning ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Scanning...
+                </>
+              ) : (
+                <>
+                  <Activity className="h-4 w-4" /> Live Scan
+                </>
+              )}
             </Button>
           </div>
         </div>

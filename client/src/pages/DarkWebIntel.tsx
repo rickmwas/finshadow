@@ -1,10 +1,53 @@
+import { useState, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { darkWebIntel } from "@/lib/mockData";
-import { Globe, AlertOctagon, Terminal, Lock } from "lucide-react";
+import { darkWebIntel, IntelFeedItem } from "@/lib/mockData";
+import { Globe, AlertOctagon, Terminal, Lock, Pause, Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const NEW_INTEL_MESSAGES = [
+  { content: "New bin 414720 detected in dump. originating from US-East.", source: "Carder's Paradise", severity: "High" },
+  { content: "User 'ZeroCool' is asking about FinShadow API endpoints.", source: "Exploit.in", severity: "Medium" },
+  { content: "Confirmed leak of 500 email/pass combos matching domain list.", source: "RaidForums", severity: "Critical" },
+  { content: "New malware signature 'ShadyRat' spotted in wild.", source: "Hybrid Analysis", severity: "High" },
+  { content: "Chatter increasing regarding SWIFT gateway vulnerability.", source: "Telegram Encrypted", severity: "Critical" },
+  { content: "Looking for drops in EU region. fast payout.", source: "DarkMarket", severity: "Low" },
+];
 
 export default function DarkWebIntel() {
+  const [feed, setFeed] = useState<IntelFeedItem[]>(darkWebIntel);
+  const [isPaused, setIsPaused] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to top when new item arrives
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [feed]);
+
+  // Simulate live feed
+  useEffect(() => {
+    if (isPaused) return;
+
+    const interval = setInterval(() => {
+      const randomMsg = NEW_INTEL_MESSAGES[Math.floor(Math.random() * NEW_INTEL_MESSAGES.length)];
+      const newItem: IntelFeedItem = {
+        id: `INT-${Math.floor(Math.random() * 10000)}`,
+        timestamp: "Just now",
+        source: randomMsg.source,
+        content: randomMsg.content,
+        tags: ["Live", "Signal"],
+        severity: randomMsg.severity as any
+      };
+
+      setFeed(prev => [newItem, ...prev].slice(0, 50)); // Keep last 50
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
   return (
     <Layout>
       <div className="flex flex-col gap-6 animate-in fade-in duration-500">
@@ -13,29 +56,42 @@ export default function DarkWebIntel() {
             <h1 className="text-3xl font-bold tracking-tight">Dark Web Intel</h1>
             <p className="text-muted-foreground mt-1">Monitoring encrypted networks (Tor/I2P) for leaks and chatter.</p>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsPaused(!isPaused)}
+            className="gap-2 border-primary/20 hover:bg-primary/10"
+          >
+            {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            {isPaused ? "Resume Feed" : "Pause Feed"}
+          </Button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="lg:col-span-2 bg-black border-border font-mono text-sm relative overflow-hidden">
+            <Card className="lg:col-span-2 bg-black border-border font-mono text-sm relative overflow-hidden flex flex-col h-[600px]">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-500 to-transparent opacity-50"></div>
-                <CardHeader>
+                <CardHeader className="pb-2">
                     <CardTitle className="text-green-500 flex items-center gap-2">
-                        <Terminal className="h-5 w-5" /> Live Feed
+                        <Terminal className="h-5 w-5" /> Live Intercept Feed
+                        <span className="flex h-2 w-2 relative ml-auto">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                    {darkWebIntel.map((item, i) => (
-                        <div key={item.id} className="p-4 border border-green-900/30 bg-green-900/5 rounded-md relative group">
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="text-green-600 text-xs">[{item.timestamp}]</span>
-                                <Badge variant="outline" className="border-green-900 text-green-500 text-[10px] uppercase">
+                <CardContent className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3" ref={scrollRef}>
+                    {feed.map((item, i) => (
+                        <div key={item.id} className="p-3 border border-green-900/30 bg-green-900/5 rounded-md relative group animate-in slide-in-from-left-2 duration-300">
+                            <div className="flex justify-between items-start mb-1">
+                                <span className="text-green-600 text-xs font-bold">[{item.timestamp}]</span>
+                                <Badge variant="outline" className="border-green-900/50 text-green-500 text-[10px] uppercase bg-green-950/30">
                                     {item.source}
                                 </Badge>
                             </div>
-                            <p className="text-gray-300 mb-3">{item.content}</p>
+                            <p className="text-gray-300 mb-2 leading-relaxed">{item.content}</p>
                             <div className="flex gap-2">
                                 {item.tags.map(tag => (
-                                    <span key={tag} className="text-xs text-green-700 bg-green-950/50 px-1.5 py-0.5 rounded">
+                                    <span key={tag} className="text-[10px] text-green-600 bg-green-950/40 px-1.5 py-0.5 rounded border border-green-900/20">
                                         #{tag}
                                     </span>
                                 ))}
@@ -47,15 +103,6 @@ export default function DarkWebIntel() {
                             )}
                         </div>
                     ))}
-                    
-                    {/* Fake extra items to fill space */}
-                    <div className="p-4 border border-border/20 bg-card/20 rounded-md opacity-50">
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="text-muted-foreground text-xs">[2 hours ago]</span>
-                            <Badge variant="outline" className="text-[10px]">RAID FORUMS</Badge>
-                        </div>
-                        <p className="text-muted-foreground">Scanning for relevant keywords...</p>
-                    </div>
                 </CardContent>
             </Card>
 
