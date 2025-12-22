@@ -1,12 +1,12 @@
-import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { fraudFindings as initialFindings, FraudFinding } from "@/lib/mockData";
+import { useFraudFindings, useUpdateFraudFinding, useInvestigateFraud, useResolveFraud } from "@/hooks/useAPI";
 import { Search, Filter, Download, MoreHorizontal, Eye, Loader2, ShieldCheck } from "lucide-react";
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -18,29 +18,40 @@ import {
 import { toast } from "sonner";
 
 export default function FraudFindings() {
-  const [findings, setFindings] = useState<FraudFinding[]>(initialFindings);
-  const [isScanning, setIsScanning] = useState(false);
-  const [selectedFinding, setSelectedFinding] = useState<FraudFinding | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>();
+  const { data: findings = [], isLoading } = useFraudFindings(statusFilter);
+  const [selectedFinding, setSelectedFinding] = useState<any | null>(null);
+  const updateMutation = useUpdateFraudFinding();
+  const investigateMutation = useInvestigateFraud();
+  const resolveMutation = useResolveFraud();
 
-  const runNewScan = () => {
-    setIsScanning(true);
-    toast.info("Scanning recent transactions...");
-    
-    setTimeout(() => {
-        setIsScanning(false);
-        const newFinding: FraudFinding = {
-            id: `FR-2024-${Math.floor(8900 + Math.random() * 100)}`,
-            timestamp: new Date().toLocaleString(),
-            source: "Real-time Monitor",
-            type: "Anomalous Geolocation",
-            severity: "High",
-            status: "New",
-            details: "Login attempt from suspended region (Sanctioned IP block)."
-        };
-        setFindings(prev => [newFinding, ...prev]);
-        toast.error("New Fraud Pattern Detected", { description: "High severity anomaly added to queue." });
-    }, 2000);
+  const handleInvestigate = async (id: string) => {
+    try {
+      await investigateMutation.mutateAsync(id);
+      toast.success("Investigation started");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
+
+  const handleResolve = async (id: string) => {
+    try {
+      await resolveMutation.mutateAsync(id);
+      toast.success("Finding resolved");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -53,14 +64,6 @@ export default function FraudFindings() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="gap-2" onClick={() => toast.success("Export started")}>
               <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button 
-                size="sm" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[130px]"
-                onClick={runNewScan}
-                disabled={isScanning}
-            >
-              {isScanning ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Scanning...</> : "Run New Scan"}
             </Button>
           </div>
         </div>
@@ -96,18 +99,19 @@ export default function FraudFindings() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {findings.map((finding) => (
-                  <TableRow key={finding.id} className="hover:bg-muted/50 border-border group cursor-pointer" onClick={() => setSelectedFinding(finding)}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{finding.id}</TableCell>
-                    <TableCell className="font-medium">{finding.type}</TableCell>
-                    <TableCell>{finding.source}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        finding.severity === 'Critical' ? 'destructive' : 
-                        finding.severity === 'High' ? 'default' : 
-                        finding.severity === 'Medium' ? 'secondary' : 'outline'
-                      } className={
-                        finding.severity === 'High' ? 'bg-orange-500/20 text-orange-500 hover:bg-orange-500/30' : ''
+                {findings.length > 0 ? (
+                  findings.map((finding: any) => (
+                    <TableRow key={finding.id} className="hover:bg-muted/50 border-border group cursor-pointer" onClick={() => setSelectedFinding(finding)}>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{finding.id}</TableCell>
+                      <TableCell className="font-medium">{finding.type}</TableCell>
+                      <TableCell>{finding.severity}</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          finding.severity === 'critical' ? 'destructive' : 
+                          finding.severity === 'high' ? 'default' : 
+                        finding.severity === 'critical' ? 'destructive' : 
+                        finding.severity === 'high' ? 'default' : 
+                        'secondary'
                       }>
                         {finding.severity}
                       </Badge>
@@ -115,13 +119,13 @@ export default function FraudFindings() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${
-                          finding.status === 'New' ? 'bg-blue-500' :
-                          finding.status === 'Investigating' ? 'bg-orange-500' : 'bg-green-500'
+                          finding.status === 'new' ? 'bg-blue-500' :
+                          finding.status === 'investigating' ? 'bg-orange-500' : 'bg-green-500'
                         }`} />
                         <span className="text-sm">{finding.status}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{finding.timestamp}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{new Date(finding.createdAt).toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                         <Sheet>
                             <SheetTrigger asChild>
@@ -157,14 +161,27 @@ export default function FraudFindings() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <h4 className="text-sm font-medium text-muted-foreground">Recommended Action</h4>
+                                        <h4 className="text-sm font-medium text-muted-foreground">Actions</h4>
                                         <div className="flex flex-col gap-2">
-                                            <Button className="w-full bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20">
-                                                Freeze Account
-                                            </Button>
-                                            <Button variant="outline" className="w-full">
-                                                Contact User
-                                            </Button>
+                                            {finding.status !== 'resolved' && (
+                                              <>
+                                                <Button 
+                                                  className="w-full" 
+                                                  onClick={() => handleInvestigate(finding.id)}
+                                                  disabled={investigateMutation.isPending}
+                                                >
+                                                  Start Investigation
+                                                </Button>
+                                                <Button 
+                                                  variant="outline" 
+                                                  className="w-full"
+                                                  onClick={() => handleResolve(finding.id)}
+                                                  disabled={resolveMutation.isPending}
+                                                >
+                                                  Resolve
+                                                </Button>
+                                              </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -172,7 +189,14 @@ export default function FraudFindings() {
                         </Sheet>
                     </TableCell>
                   </TableRow>
-                ))}
+                ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No fraud findings found
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      # Set DATABASE_URL via .env file - should point to your Supabase instance
+      # Example: postgresql://postgres.PROJECT_ID:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?sslmode=require
+      JWT_SECRET: dev-secret-key-change-in-production
+    ports:
+      - "5000:5000"
+    # Run migrations then start in development mode so Vite and TSX run
+    # inside the container for full dev experience.
+    command: sh -c "npm run db:push || true && npm run dev"
+    volumes:
+      - ./:/app
+      # Prevent host's node_modules (Windows) from overwriting
+      # the container-installed modules which are Linux-native.
+      - /app/node_modules
+    env_file:
+      - .env

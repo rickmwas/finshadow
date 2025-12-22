@@ -1,9 +1,8 @@
-import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { stats as initialStats, fraudFindings, predictions } from "@/lib/mockData";
+import { useStats, useFraudFindings, usePredictions } from "@/hooks/useAPI";
 import { 
   ShieldAlert, 
   Activity, 
@@ -46,20 +45,37 @@ const riskDistribution = [
 ];
 
 export default function Dashboard() {
-  const [isScanning, setIsScanning] = useState(false);
-  const [stats, setStats] = useState(initialStats);
+  const { data: stats, isLoading: statsLoading } = useStats();
+  const { data: fraudList = [], isLoading: fraudLoading } = useFraudFindings();
+  const { data: predictionList = [], isLoading: predLoading } = usePredictions();
+
+  const isLoading = statsLoading || fraudLoading || predLoading;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  // Use real stats from API, fallback to defaults
+  const displayStats = stats || {
+    activeThreats: 0,
+    fraudAttemptsBlocked: 0,
+    systemRiskScore: 0,
+    aiConfidenceAvg: 0,
+  };
+
+  // Use first 5 fraud findings from API
+  const recentFindings = fraudList?.slice(0, 5) || [];
 
   const handleLiveScan = () => {
-    setIsScanning(true);
     toast.info("Initiating deep system scan...");
     
     setTimeout(() => {
-      setIsScanning(false);
-      setStats(prev => ({
-        ...prev,
-        activeThreats: prev.activeThreats + 1,
-        fraudAttemptsBlocked: prev.fraudAttemptsBlocked + 5
-      }));
       toast.error("Threat Detected!", {
         description: "1 critical anomaly found in transaction stream.",
         action: {
@@ -86,17 +102,8 @@ export default function Dashboard() {
               size="sm" 
               className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 min-w-[120px]"
               onClick={handleLiveScan}
-              disabled={isScanning}
             >
-              {isScanning ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Scanning...
-                </>
-              ) : (
-                <>
-                  <Activity className="h-4 w-4" /> Live Scan
-                </>
-              )}
+              <Activity className="h-4 w-4" /> Live Scan
             </Button>
           </div>
         </div>
@@ -109,12 +116,11 @@ export default function Dashboard() {
               <ShieldAlert className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activeThreats}</div>
+              <div className="text-2xl font-bold">{displayStats.activeThreats}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className="text-destructive flex items-center mr-1">
-                  +2 <ArrowUpRight className="h-3 w-3" />
+                <span className="text-muted-foreground flex items-center mr-1">
+                  Real-time data
                 </span>
-                from last hour
               </p>
             </CardContent>
           </Card>
@@ -124,12 +130,11 @@ export default function Dashboard() {
               <ShieldAlert className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.fraudAttemptsBlocked}</div>
+              <div className="text-2xl font-bold">{displayStats.fraudAttemptsBlocked}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
-                  +12% <TrendingUp className="h-3 w-3" />
+                  Synced
                 </span>
-                efficiency rate
               </p>
             </CardContent>
           </Card>
@@ -139,9 +144,9 @@ export default function Dashboard() {
               <BrainCircuit className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.aiConfidenceAvg}%</div>
+              <div className="text-2xl font-bold">{displayStats.aiConfidenceAvg}%</div>
               <div className="w-full bg-secondary h-1.5 mt-2 rounded-full overflow-hidden">
-                <div className="bg-purple-500 h-full" style={{ width: `${stats.aiConfidenceAvg}%` }} />
+                <div className="bg-purple-500 h-full" style={{ width: `${displayStats.aiConfidenceAvg}%` }} />
               </div>
             </CardContent>
           </Card>
@@ -151,9 +156,9 @@ export default function Dashboard() {
               <Activity className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.systemRiskScore}/100</div>
+              <div className="text-2xl font-bold">{displayStats.systemRiskScore}/100</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Moderate Level
+                Risk assessment
               </p>
             </CardContent>
           </Card>
@@ -202,29 +207,33 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {fraudFindings.slice(0, 4).map((finding) => (
-                  <div key={finding.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-transparent hover:border-primary/20 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        finding.severity === 'Critical' ? 'bg-destructive/20 text-destructive' :
-                        finding.severity === 'High' ? 'bg-orange-500/20 text-orange-500' :
-                        'bg-primary/20 text-primary'
-                      }`}>
-                        <AlertTriangle className="h-4 w-4" />
+                {recentFindings.length > 0 ? (
+                  recentFindings.map((finding: any) => (
+                    <div key={finding.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-transparent hover:border-primary/20 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${
+                          finding.severity === 'critical' ? 'bg-destructive/20 text-destructive' :
+                          finding.severity === 'high' ? 'bg-orange-500/20 text-orange-500' :
+                          'bg-primary/20 text-primary'
+                        }`}>
+                          <AlertTriangle className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium leading-none">{finding.type}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{finding.details?.substring(0, 30)}...</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium leading-none">{finding.type}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{finding.source}</p>
+                      <div className="text-right">
+                        <Badge variant={finding.severity === 'critical' ? 'destructive' : 'secondary'} className="text-[10px]">
+                          {finding.severity}
+                        </Badge>
+                        <p className="text-[10px] text-muted-foreground mt-1">{new Date(finding.createdAt).toLocaleTimeString()}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant={finding.severity === 'Critical' ? 'destructive' : 'secondary'} className="text-[10px]">
-                        {finding.severity}
-                      </Badge>
-                      <p className="text-[10px] text-muted-foreground mt-1">{finding.timestamp.split(' ')[1]}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No fraud findings yet</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -242,7 +251,7 @@ export default function Dashboard() {
              </CardHeader>
              <CardContent>
                <div className="space-y-4">
-                 {predictions.slice(0, 2).map((pred) => (
+                 {predictionList.slice(0, 2).map((pred: any) => (
                    <div key={pred.id} className="space-y-2">
                      <div className="flex justify-between text-sm">
                        <span>{pred.target}</span>

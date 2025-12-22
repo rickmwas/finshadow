@@ -1,52 +1,34 @@
-import { useState, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { darkWebIntel, IntelFeedItem } from "@/lib/mockData";
-import { Globe, AlertOctagon, Terminal, Lock, Pause, Play } from "lucide-react";
+import { Globe, AlertOctagon, Terminal, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const NEW_INTEL_MESSAGES = [
-  { content: "New bin 414720 detected in dump. originating from US-East.", source: "Carder's Paradise", severity: "High" },
-  { content: "User 'ZeroCool' is asking about FinShadow API endpoints.", source: "Exploit.in", severity: "Medium" },
-  { content: "Confirmed leak of 500 email/pass combos matching domain list.", source: "RaidForums", severity: "Critical" },
-  { content: "New malware signature 'ShadyRat' spotted in wild.", source: "Hybrid Analysis", severity: "High" },
-  { content: "Chatter increasing regarding SWIFT gateway vulnerability.", source: "Telegram Encrypted", severity: "Critical" },
-  { content: "Looking for drops in EU region. fast payout.", source: "DarkMarket", severity: "Low" },
-];
+import { useDarkWebIntel } from "@/hooks/useAPI";
+import { useRef, useEffect } from "react";
 
 export default function DarkWebIntel() {
-  const [feed, setFeed] = useState<IntelFeedItem[]>(darkWebIntel);
-  const [isPaused, setIsPaused] = useState(false);
+  const { data: darkWebItems, isLoading, error } = useDarkWebIntel();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const feed = darkWebItems || [];
 
-  // Auto-scroll to top when new item arrives
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
   }, [feed]);
 
-  // Simulate live feed
-  useEffect(() => {
-    if (isPaused) return;
-
-    const interval = setInterval(() => {
-      const randomMsg = NEW_INTEL_MESSAGES[Math.floor(Math.random() * NEW_INTEL_MESSAGES.length)];
-      const newItem: IntelFeedItem = {
-        id: `INT-${Math.floor(Math.random() * 10000)}`,
-        timestamp: "Just now",
-        source: randomMsg.source,
-        content: randomMsg.content,
-        tags: ["Live", "Signal"],
-        severity: randomMsg.severity as any
-      };
-
-      setFeed(prev => [newItem, ...prev].slice(0, 50)); // Keep last 50
-    }, 3500);
-
-    return () => clearInterval(interval);
-  }, [isPaused]);
+  const getSeverityColor = (severity: string) => {
+    switch (severity?.toLowerCase()) {
+      case 'critical':
+        return 'text-destructive';
+      case 'high':
+        return 'text-orange-500';
+      case 'medium':
+        return 'text-yellow-500';
+      default:
+        return 'text-green-500';
+    }
+  };
 
   return (
     <Layout>
@@ -59,11 +41,11 @@ export default function DarkWebIntel() {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => setIsPaused(!isPaused)}
+            disabled={isLoading}
             className="gap-2 border-primary/20 hover:bg-primary/10"
           >
-            {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-            {isPaused ? "Resume Feed" : "Pause Feed"}
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Refresh Feed
           </Button>
         </div>
 
@@ -73,36 +55,46 @@ export default function DarkWebIntel() {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-green-500 flex items-center gap-2">
                         <Terminal className="h-5 w-5" /> Live Intercept Feed
-                        <span className="flex h-2 w-2 relative ml-auto">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
+                        {!isLoading && (
+                          <span className="flex h-2 w-2 relative ml-auto">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          </span>
+                        )}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3" ref={scrollRef}>
-                    {feed.map((item, i) => (
+                    {isLoading ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Loader2 className="h-6 w-6 animate-spin text-green-500" />
+                      </div>
+                    ) : error ? (
+                      <div className="text-red-500 text-xs">Failed to load intel feed</div>
+                    ) : feed.length === 0 ? (
+                      <div className="text-green-600 text-xs">No intelligence items found</div>
+                    ) : (
+                      feed.map((item) => (
                         <div key={item.id} className="p-3 border border-green-900/30 bg-green-900/5 rounded-md relative group animate-in slide-in-from-left-2 duration-300">
                             <div className="flex justify-between items-start mb-1">
-                                <span className="text-green-600 text-xs font-bold">[{item.timestamp}]</span>
+                                <span className="text-green-600 text-xs font-bold">[Recently detected]</span>
                                 <Badge variant="outline" className="border-green-900/50 text-green-500 text-[10px] uppercase bg-green-950/30">
                                     {item.source}
                                 </Badge>
                             </div>
                             <p className="text-gray-300 mb-2 leading-relaxed">{item.content}</p>
-                            <div className="flex gap-2">
-                                {item.tags.map(tag => (
-                                    <span key={tag} className="text-[10px] text-green-600 bg-green-950/40 px-1.5 py-0.5 rounded border border-green-900/20">
-                                        #{tag}
-                                    </span>
-                                ))}
+                            <div className="flex gap-2 justify-between">
+                                <span className={`text-[10px] ${getSeverityColor(item.severity)} uppercase font-bold`}>
+                                    {item.severity}
+                                </span>
                             </div>
-                            {item.severity === 'Critical' && (
+                            {item.severity?.toLowerCase() === 'critical' && (
                                 <div className="absolute right-2 bottom-2 text-destructive animate-pulse">
                                     <AlertOctagon className="h-4 w-4" />
                                 </div>
                             )}
                         </div>
-                    ))}
+                      ))
+                    )}
                 </CardContent>
             </Card>
 
