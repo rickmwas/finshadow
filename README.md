@@ -4,7 +4,7 @@ FinShadow is a full-stack TypeScript application for security and intelligence d
 
 ## Key Features
 
-- Real-time-ish UI powered by Vite + React
+- Real-time UI powered by Vite + React
 - Structured UI components (Radix + Tailwind + custom components)
 - Server API implemented in TypeScript (Express)
 - Database tooling with Drizzle ORM
@@ -32,7 +32,7 @@ FinShadow is a full-stack TypeScript application for security and intelligence d
 1. Install node dependencies
 
 ```powershell
-cd "C:\Users\rickm\OneDrive\Desktop\FinShadow\FinShadow"
+cd <project_root_folder>
 npm install
 ```
 
@@ -91,6 +91,52 @@ Make sure you have your Postgres connection configured (typically via environmen
 - If you experience issues starting `npm run dev`, ensure `tsx` and `cross-env` are installed and that `node` version is compatible with the devDependencies.
 - Use `npm run check` to catch TypeScript issues early.
 
+## Docker (local development)
+
+These instructions let you run Postgres + the app via Docker Compose. Docker Desktop must be installed and running.
+
+1. Copy `.env.example` to `.env` and update if needed (only `DATABASE_URL`/`JWT_SECRET` if you want custom values):
+
+```powershell
+cp .env.example .env
+```
+
+2. Build and start the stack (Postgres + app):
+
+```powershell
+docker compose up -d --build
+```
+
+3. Tail logs (optional):
+
+```powershell
+docker compose logs -f
+```
+
+4. Apply Drizzle schema (if compose didn't run it automatically):
+
+```powershell
+# Runs on the host; requires DATABASE_URL in .env to point to the compose 'db' service
+npm run db:push
+```
+
+5. Verify API health:
+
+```powershell
+curl http://localhost:5000/api/health
+```
+
+6. Stop the stack:
+
+```powershell
+docker compose down
+```
+
+Troubleshooting:
+- If Docker Desktop reports the daemon not starting, restart Docker Desktop and try again.
+- Ensure ports `5000` and `5432` are free on your system.
+- If you prefer not to run Docker, you can set up Postgres locally and set `DATABASE_URL` accordingly.
+
 ## Contributing
 
 - Fork and open a PR with clear description and testing steps.
@@ -101,3 +147,4 @@ Make sure you have your Postgres connection configured (typically via environmen
 This project is licensed under the MIT License.
 
 ---
+
